@@ -49,30 +49,43 @@ $hash = substr(sha1(uniqid() * rand()), 0, 10);
 $buildDir = sys_get_temp_dir() . '/lumberjack-' . $hash;
 
 $filesystem->mkdir($buildDir);
-$filesystem->mkdir($buildDir . '/ansible');
+$filesystem->mkdir($buildDir . '/box');
+$filesystem->mkdir($buildDir . '/box/ansible');
+$filesystem->mkdir($buildDir . '/www');
 
 foreach (array_keys($rolesToInstall) as $role) {
-    $filesystem->mirror(__DIR__ . '/dist/roles-available/' . $role, $buildDir . '/ansible/roles/' . $role);
+    $filesystem->mirror(__DIR__ . '/dist/roles-available/' . $role, $buildDir . '/box/ansible/roles/' . $role);
 }
 
 // ---------- Templating ----------
 
 foreach (['app.yml.tpl.php', 'dev.tpl.php', 'settings.yml.tpl.php'] as $file) {
     ob_start();
-    require __DIR__ . '/dist/files/' . $file;
-    file_put_contents($buildDir . '/ansible/' . str_replace('.tpl.php', '', $file), ob_get_clean());
+    require __DIR__ . '/dist/files/ansible/' . $file;
+    file_put_contents($buildDir . '/box/ansible/' . str_replace('.tpl.php', '', $file), ob_get_clean());
 }
 
 foreach (['Vagrantfile.tpl.php', 'README.md.tpl.php'] as $file) {
     ob_start();
-    require __DIR__ . '/dist/files/' . $file;
-    file_put_contents($buildDir . '/' . str_replace('.tpl.php', '', $file), ob_get_clean());
+    require __DIR__ . '/dist/files/box/' . $file;
+    file_put_contents($buildDir . '/box/' . str_replace('.tpl.php', '', $file), ob_get_clean());
 }
 
 ob_start();
-require __DIR__ . '/dist/files/dashboard.tpl.php';
+require __DIR__ . '/dist/files/ansible/dashboard.tpl.php';
 $dashboardContent = str_replace('[?php', '<?php', str_replace('?]', '?>', ob_get_clean()));
-file_put_contents($buildDir . '/ansible/roles/dashboard/templates/index.php.j2', $dashboardContent);
+file_put_contents($buildDir . '/box/ansible/roles/dashboard/templates/index.php.j2', $dashboardContent);
+
+foreach (['README.md.tpl.php'] as $file) {
+    ob_start();
+    require __DIR__ . '/dist/files/www/' . $file;
+    file_put_contents($buildDir . '/www/' . str_replace('.tpl.php', '', $file), ob_get_clean());
+}
+
+// Add the main README file.
+ob_start();
+require __DIR__ . '/dist/files/README.md.tpl.php';
+file_put_contents($buildDir . '/README.md.tpl.php', ob_get_clean());
 
 // To improve (concurency)
 $archive = __DIR__ . '/lumberjack-ansible_' . $hash . '.tar';
