@@ -74,6 +74,48 @@
               <label for="vm_name">Local VM name</label>
               <input type="text" class="form-control" id="vm_name" name="general[vm_name]" value="foobar-dev">
             </div>
+            <div class="form-group col-md-6">
+              <label for="vm_memory">Local VM memory</label>
+              <input type="text" class="form-control" id="vm_memory" name="general[vm_memory]" value="2048">
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col-md-6">
+              <label for="vm_processor">Local VM processor</label>
+              <input type="text" class="form-control" id="vm_processor" name="general[vm_processor]" value="1">
+            </div>
+            <div class="form-group col-md-6">
+              <label for="vm_provider">Virtualization System</label>
+              <div>
+                <label>              
+                  <select id="vm_provider" name="general[vm_provider]" style="width:150px;" class="select2-simple-select form-control" data-placeholder="None">
+                    <option value="vb" selected>Virtual Box</option>
+                    <option value="vw">VM Ware</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group col-md-6">
+              <label for="vm_box_name">Vagrant Box Name</label>
+              <input type="text" class="form-control" id="vm_box_name" name="general[vm_box_name]" value="MYBOX">
+            </div>
+            <div class="form-group col-md-6">
+              <label for="vm_box">Vagrant Box</label>
+              <div>
+                <label>              
+                  <select id="vm_box" name="general[vm_box]" style="width:150px;" class="select2-simple-select form-control" data-placeholder="None">
+                    <option value="vb-debian7" selected>Debian 7 - Virtual Box</option>
+                    <option value="vw-debian7">Debian 7 - VM Ware</option>
+                    <option value="vb-centos6.4">Centos 6.4 - Virtual Box</option>
+                    <option value="vw-centos6.4">Centos 6.4 - VM Ware</option>
+                  </select>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
