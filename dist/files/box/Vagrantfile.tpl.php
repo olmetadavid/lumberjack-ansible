@@ -1,14 +1,33 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+require 'yaml'
+
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "virtualbox-debian-wheezy-64"
+def symbolize_keys(hash)
+  hash.inject({}){|result, (key, value)|
+    new_key = case key
+              when String then key.to_sym
+              else key
+              end
+    new_value = case value
+                when Hash then symbolize_keys(value)
+                else value
+                end
+    result[new_key] = new_value
+    result
+  }
+end
 
-  # Debian Wheezy 7.0 amd64 - Vanilla
-  config.vm.box_url = "https://dl.dropboxusercontent.com/u/10765492/debian-wheezy-64.box"
+settings = YAML::load_file "settings.yml"
+settings = symbolize_keys(settings)
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  config.vm.box = settings[:box_name]
+  config.vm.box_url = settings[:box_url]
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
@@ -19,33 +38,49 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # using a specific IP.
 
   # IP Address of the VM
-  config.vm.network "private_network", ip: "<?php echo $general['address_ip']; ?>"
+  config.vm.network :private_network, ip: settings[:ip]
 
-  # Hostname of the VM (use in ansible inventory : ansible/dev)
-  config.vm.hostname = "<?php echo $general['vm_name']; ?>"
+  # Hostname of the VM (use in ansible inventory : ansible/vagrant_hosts)
+  config.vm.hostname = settings[:host_name]
 
   # Deactivation of the default share
   config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
 
   # Share of the current folder
-  config.vm.synced_folder ".", "/home/vagrant/www/project", type: "nfs"
+  if settings[:synced_folders]
+    settings[:synced_folders].each do |sf_name, sf|
+
+      if settings[:vm_provider] == 'vw'
+        config.vm.synced_folder sf[:host_path], sf[:guest_path_nfs], :nfs => true, :mount_options => ['nolock,vers=3,udp']
+        config.bindfs.bind_folder sf[:guest_path_nfs], sf[:guest_path]
+      else
+        config.vm.synced_folder sf[:host_path], sf[:guest_path], :nfs => true
+      end
+
+    end
+  end
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
-  config.vm.provider "virtualbox" do |vb|
-     # Don't boot with headless mode
-     vb.gui = false
+  config.vm.provider :vmware_fusion do |v|
+    v.vmx["memsize"] = settings[:ram]
+    v.vmx["numvcpus"] = settings[:proc]
+  end
 
-     # Use VBoxManage to customize the VM. For example to change memory:
-     vb.customize ["modifyvm", :id, "--memory", "1024"]
-   end
+  config.vm.provider :virtualbox do |v|
+    # Don't boot with headless mode
+    v.gui = false
+
+    v.customize [ "modifyvm", :id, "--cpus", settings[:proc] ]
+    v.customize [ "modifyvm", :id, "--memory", settings[:ram] ]
+  end
 
 
   # Provisioning Ansible
   #  * http://docs.vagrantup.com/v2/provisioning/ansible.html
   #  * http://docs.ansible.com/guide_vagrant.html
   config.vm.provision "ansible" do |ansible|
-    ansible.inventory_path = "ansible/dev"
+    ansible.inventory_path = "ansible/inventories/vagrant"
     ansible.playbook = "ansible/app.yml"
     ansible.extra_vars = {
       uservar: "vagrant"
@@ -56,8 +91,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 
   # PLUGINS
-
-  config.vbguest.auto_update = true
-  config.vbguest.no_remote = false
+  config.vm.provider :virtualbox do |v|
+    config.vbguest.auto_update = true
+    config.vbguest.no_remote = false
+  end
 
 end

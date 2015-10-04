@@ -65,7 +65,7 @@ foreach (['app.yml.tpl.php', 'dev.tpl.php', 'settings.yml.tpl.php'] as $file) {
     file_put_contents($buildDir . '/box/ansible/' . str_replace('.tpl.php', '', $file), ob_get_clean());
 }
 
-foreach (['Vagrantfile.tpl.php', 'README.md.tpl.php'] as $file) {
+foreach (['Vagrantfile.tpl.php', 'README.md.tpl.php', 'default.settings.yml.tpl.php'] as $file) {
     ob_start();
     require __DIR__ . '/dist/files/box/' . $file;
     file_put_contents($buildDir . '/box/' . str_replace('.tpl.php', '', $file), ob_get_clean());
